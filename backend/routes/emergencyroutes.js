@@ -1,15 +1,15 @@
 const express = require("express");
-const router = require.Router();
+const router = express.Router();
 const emergency = require("../models/emergency");
 
 router.post("/sos",async(req,res)=> {
     try{
         const {phone,lat,lng}=req.body;
-        const newRequest = new Emergency({
+        const newRequest = new emergency({
             phone,
             location:{lat,lng}
         });
-        await newRequest.save   ();
+        await newRequest.save();
         res.status(201).json({
             success:true,
             message:"Ambulance dispatched! Help is on the way"

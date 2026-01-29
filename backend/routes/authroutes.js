@@ -15,7 +15,7 @@ const upload = multer ({storage}).single("image");
 
 router.post ("/register",upload,async(req,res)=>{
     try{
-      const { name, email, phone, password, role } = req.body;
+      const { name, email, phone, password, role,gender,specialization,fees,experience,address } = req.body;
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: "already!register" });
@@ -28,9 +28,16 @@ router.post ("/register",upload,async(req,res)=>{
             name,
             phone,
             email,
-            role,
+            role:role ||"patient",
             password :hashedPassword,
-            image: req.file ? req.file.filename : ""
+            image: req.file ? req.file.filename : "",
+            gender: gender ||"Male",
+            address:address||"",
+            specialization:role ==="doctor"? specialization:"",
+            fees: role === "doctor"? fees:"",
+            available:role ==="doctor"? true:false
+
+
         });
 
         await newUser.save();
@@ -58,10 +65,11 @@ router.post("/login", async (req, res) => {
 
         res.status(200).json({
             message: "Login Successful!",
-            user: {
+            user: { 
                 id: user._id,
                 name: user.name,
-                role: user.role
+                role: user.role,
+                available:user.available
             }
         });
     } catch (error) {

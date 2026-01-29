@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
 const emergencySchema = new mongoose.Schema({
-    phone:{type:String,
+    phone:{type:Number,
         required:true
     },
     location:{
-        lat:{type:number,required:true},
-        lng:{type:number,required:true}
+        lat:{type:Number,required:true},
+        lng:{type:Number,required:true}
     },
     status:{type:String,default:"Pending"},
     createdAt:{type:Date,default:Date.now}

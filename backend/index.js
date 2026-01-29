@@ -3,18 +3,18 @@ const express = require("express");
 const session =require("express-session");
 const mongoose = require("mongoose");
 const path = require("path");
+const cors = require("cors");
 const app = express();
-const PORT=process.env.PORT||5500;
+const PORT=process.env.PORT||8080;
 
-mongoose
-.connect (process.env.DB_URI,{
 
-})
-.then(() => console.log("Connected to the database"))
-.catch((error) => console.error(error));
-
-app.use(express.urlencoded({extended:true}));
+app.use(cors({
+    origin: "http://localhost:3000", 
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
 app.use(express.json());
+app.use(express.urlencoded({extended:true}));
 
 app.use(
     session({
@@ -28,11 +28,20 @@ app.use("/uploads",express.static(path.join(__dirname,"uploads")));
 
 
 app.get('/',(req,res)=>{
-    res.send('Server is start running');
+    res.send('Server is  running on 8080');
 });
 app.use("/api/auth", require("./routes/authroutes"));
 app.use("/api/patient", require("./routes/patientroutes"));
 app.use("/api/doctor", require("./routes/doctorroutes"));
 app.use("/api/emergency",require("./routes/emergencyroutes"));
+
+mongoose
+.connect (process.env.DB_URI)
+.then(() =>{ console.log("Connected to the database")
 app.listen(PORT,()=>{console.log(`Server running on port :${PORT} `);
 });
+})
+.catch((error) => {console.error("Database connection fail",error)
+    process.exit(1);
+});
+
