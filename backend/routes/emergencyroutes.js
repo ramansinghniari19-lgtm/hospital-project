@@ -7,21 +7,21 @@ const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
         user: "ramansinghniari19@gmail.com",
-        pass: "skjh uyjf abrm hzgc"
+        pass: "skjhuyjfabrmhzgc" 
     },
 });
 
 const sendEmail = async (to, subject, text) => {
     try {
         await transporter.sendMail({
-            from: '" SOS EMERGENCY" <ramansinghniari19@gmail.com>',
+            from: '"SOS EMERGENCY" <ramansinghniari19@gmail.com>',
             to: to,
             subject: subject,
             text: text,
         });
-        console.log(" Emergency Email Sent successfully!");
+        console.log("Emergency Email Sent successfully!");
     } catch (error) {
-        console.error(" Email Error:", error.message);
+        console.error("Email Error:", error.message);
     }
 };
 
@@ -37,9 +37,9 @@ router.post("/sos", async (req, res) => {
 
         const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
 
-        const alertMessage = ` EMERGENCY ALERT! \n\nEk patient ne SOS dabaya hai!\n\nPhone Number: ${phone}\nLocation Link: ${mapUrl}\n\nAmbulance turant rawana karein!`;
+        const alertMessage = ` EMERGENCY ALERT! \n\n Emergency alert!\n\nPhone Number: ${phone}\nLocation Link: ${mapUrl}\n\nPlease send a ambulance immediteily!`;
 
-        await sendEmail("ramansinghniari19@gmail.com", "SOS REQUEST RECEIVED!", alertMessage);
+        await sendEmail("ramansinghniari19@gmail.com", " SOS REQUEST RECEIVED!", alertMessage);
         
         res.status(201).json({
             success: true,

@@ -3,12 +3,13 @@ const router = express.Router();
 const Appointment = require("../models/Appointment");
 const User = require("../models/user");
 const nodemailer = require("nodemailer"); 
+const path = require("path");
 
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
         user: "ramansinghniari19@gmail.com",
-        pass: "  skjh uyjf abrm hzgc " 
+        pass: "skjhuyjfabrmhzgc" 
     },
 });
 
@@ -85,5 +86,10 @@ router.get("/my-medical-history/:patientId", async (req, res) => {
         res.status(500).json({ message: "Fetch error" });
     }
 });
-
+router.get("/download-report/:filename", (req, res) => {
+    const filePath = path.join(__dirname, "../uploads", req.params.filename);
+    res.download(filePath, (err) => {
+        if (err) res.status(404).json({ message: "File nahi mili!" });
+    });
+});
 module.exports = router;

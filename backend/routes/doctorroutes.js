@@ -3,14 +3,14 @@ const router = express.Router();
 const Appointment = require("../models/Appointment");
 const User = require("../models/user"); 
 const multer = require("multer");
-const axios = require("axios");
 const nodemailer = require("nodemailer");
+const path = require("path");
 
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
         user: "ramansinghniari19@gmail.com",
-        pass: "skjh uyjf abrm hzgc" 
+        pass: "skjhuyjfabrmhzgc" 
     },
 });
 
@@ -28,12 +28,17 @@ const sendEmail = async (to, subject, text) => {
     }
 };
 
-const storage = multer.diskStorage({
+const reportStorage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, "./uploads/reports"),
     filename: (req, file, cb) => cb(null, "REPORT_" + Date.now() + "_" + file.originalname)
 });
-const upload = multer({ storage });
+const uploadReport = multer({ storage: reportStorage });
 
+const profileStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, "./uploads/profilePics"),
+    filename: (req, file, cb) => cb(null, "DP_" + Date.now() + "_" + file.originalname)
+});
+const uploadProfile = multer({ storage: profileStorage });
 
 router.get("/appointments/:doctorId", async (req, res) => {
     try {
@@ -41,6 +46,37 @@ router.get("/appointments/:doctorId", async (req, res) => {
         res.status(200).json(list);
     } catch (error) {
         res.status(500).json({ message: "List not found" });
+    }
+});
+
+router.get("/stats/:doctorId", async (req, res) => {
+    try {
+        const total = await Appointment.countDocuments({ doctorId: req.params.doctorId });
+        const pending = await Appointment.countDocuments({ doctorId: req.params.doctorId, status: "pending" });
+        const completed = await Appointment.countDocuments({ doctorId: req.params.doctorId, status: "Completed" });
+        res.status(200).json({ total, pending, completed });
+    } catch (error) {
+        res.status(500).json({ message: "Stats error", error: error.message });
+    }
+});
+
+router.put("/update-profile/:id", uploadProfile.single("profilePic"), async (req, res) => {
+    try {
+        const { specialization, fees, experience, bio, available } = req.body;
+        let updateData = { specialization, fees, experience, bio, available };
+
+        if (req.file) {
+            updateData.image = req.file.filename;
+        }
+
+        const updatedDoctor = await User.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        ).select("-password");
+        res.status(200).json({ message: "Profile Updated!", updatedDoctor });
+    } catch (error) {
+        res.status(500).json({ message: "Update failed", error: error.message });
     }
 });
 
@@ -86,29 +122,15 @@ router.put("/reject/:id", async (req, res) => {
     }
 });
 
-router.put("/update-status/:id", async (req, res) => {
+router.post("/complete-appointment/:id", uploadReport.single("reportFile"), async (req, res) => {
     try {
-        const { available } = req.body;
-        const updatedDoc = await User.findByIdAndUpdate(
-            req.params.id,
-            { available },
-            { new: true } 
-        );
-        res.status(200).json({ message: "Status Updated!", available: updatedDoc.available });
-    } catch (error) {
-        res.status(500).json({ message: "Status update fail", error: error.message });
-    }
-});
-
-router.post("/complete-appointment/:id", upload.single("reportFile"), async (req, res) => {
-    try {
-        const { status, medicines } = req.body;
+        const { medicines, diagnosis, advice } = req.body;
         const appointment = await Appointment.findById(req.params.id).populate("patientId");
         
         if (!appointment) return res.status(404).json({ message: "Appointment not found" });
 
-        if (status) appointment.status = status;
-        if (medicines) appointment.prescription = medicines; 
+        appointment.status = "Completed";
+        appointment.prescription = `Diagnosis: ${diagnosis || 'N/A'}\nMedicines: ${medicines}\nAdvice: ${advice || 'N/A'}`;
 
         if (req.file) {
             appointment.reports.push({
@@ -118,6 +140,7 @@ router.post("/complete-appointment/:id", upload.single("reportFile"), async (req
         }
 
         await appointment.save();
+
         if (appointment.patientId && appointment.patientId.email) {
             const emailMessage = `Hi ${appointment.patientId.name}, your report & prescription are uploaded. Check your dashboard!`;
             await sendEmail(appointment.patientId.email, "Medical Report Uploaded", emailMessage);

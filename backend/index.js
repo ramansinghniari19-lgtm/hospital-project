@@ -24,8 +24,8 @@ app.use(
         cookie:{secure: false}
     })
 );
-app.use("/uploads",express.static(path.join(__dirname,"uploads")));
-
+app.use("/uploads/reports", express.static(path.join(__dirname, "uploads/reports")));
+app.use("/uploads/profilePics", express.static(path.join(__dirname, "uploads/profilePics")));
 
 app.get('/',(req,res)=>{
     res.send('Server is  running on 8080');
