@@ -1,22 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/login";
+// Baaki pages ke components (Jab ban jayenge tab import honge)
+// import Register from "./pages/Register";
+// import PatientDashboard from "./pages/PatientDashboard";
+// import DoctorDashboard from "./pages/DoctorDashboard";
 
 function App() {
-  const [message, setMessage] = useState("Connecting to server...");
-
-  useEffect(() => {
-    axios.get("http://localhost:8080/") 
-      .then(res => setMessage("Backend Connected! Server says: " + res.data))
-      .catch(err => setMessage("Connection Failed! Error: " + err.message));
-  }, []);
-
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <h1>Hospital Management System</h1>
-      <p style={{ color: message.includes("Connected") ? "green" : "red" }}>
-        {message}
-      </p>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          {/* Default route: Agar koi seedha aaye toh use login par bhejo */}
+          <Route path="/" element={<Navigate to="/login" />} />
+          
+          {/* Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          {/* <Route path="/register" element={<Register />} /> */}
+
+          {/* Dashboards (Inhe hum kal detail mein banayenge) */}
+          {/* <Route path="/patient-dashboard" element={<PatientDashboard />} /> */}
+          {/* <Route path="/doctor-dashboard" element={<DoctorDashboard />} /> */}
+          
+          {/* Error Page: Agar koi galat URL daale */}
+          <Route path="*" element={<h2>404: Bhai galat raste aa gaye!</h2>} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
