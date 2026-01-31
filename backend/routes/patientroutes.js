@@ -2,23 +2,27 @@ const express = require("express");
 const router = express.Router();
 const Appointment = require("../models/Appointment");
 const User = require("../models/user");
-const axios = require("axios");
+const nodemailer = require("nodemailer"); 
 
-const sendSMS = async(number,message)=>{
-    try{
-        await axios.get('https://www.fast2sms.com/dev/bulkV2',{
-            params: {   
-                "authorization":"26d5mXi7qTfUSYnhwA0IPvBDbZHQ3uc8zKtRjsk4CFpaGxoegVOi0CH5pgowsJVDhdKWyBaNF4tQkeEr",
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: "ramansinghniari19@gmail.com",
+        pass: "  skjh uyjf abrm hzgc " 
+    },
+});
 
-                "route":"q",
-                "message":message,
-                "language":"english",
-                "number":number,
-            }
-    });
-    console.log("message deliverd");
-    }catch(error){
-        console.log("Error in SMS",error.message);
+const sendEmail = async (to, subject, text) => {
+    try {
+        await transporter.sendMail({
+            from: '"Tagore Hospital" <ramansinghniari19@gmail.com>',
+            to: to,
+            subject: subject,
+            text: text,
+        });
+        console.log("Email sent successfully to:", to);
+    } catch (error) {
+        console.error(" Email Error:", error.message);
     }
 };
 
@@ -36,6 +40,7 @@ router.get("/view-doctors", async (req, res) => {
 router.post("/book", async (req, res) => {
     try {
         const { patientId, doctorId, date, time, message } = req.body;
+        
         const newAppointment = new Appointment({ 
             patientId,
             doctorId,
@@ -46,18 +51,27 @@ router.post("/book", async (req, res) => {
         });
         await newAppointment.save();
 
+        const patient = await User.findById(patientId);
+        if (patient && patient.email) {
+            const emailText = `Hi ${patient.name}, your appointment request for ${date} at ${time} has been sent. Please wait for doctor's approval.`;
+            await sendEmail(patient.email, "Appointment Request Sent", emailText);
+        }
+
         setTimeout(async () => {
-            const checkAppoint = await Appointment.findById(newAppointment._id);
+            const checkAppoint = await Appointment.findById(newAppointment._id).populate("patientId");
             
             if (checkAppoint && checkAppoint.status === "pending") {
                 checkAppoint.status = "Rejected"; 
                 await checkAppoint.save();
-                console.log(`Auto-rejected appointment: ${newAppointment._id} (Doctor didn't respond)`);
+                
+                if(checkAppoint.patientId && checkAppoint.patientId.email) {
+                    sendEmail(checkAppoint.patientId.email, "Appointment Update", "Sorry, the doctor didn't respond in time. Your request is auto-rejected.");
+                }
+                console.log(`Auto-rejected appointment: ${newAppointment._id}`);
             }
-        }, 500000);
-        res.status(201).json({ message: "Request Sent! Doctor has a  5 minutes to respond" ,
-            appointmentId:newAppointment._id
-        });
+        }, 300000); 
+
+        res.status(201).json({ message: "Request Sent! Email confirmation delivered.", appointmentId:newAppointment._id });
     } catch (error) {
         res.status(500).json({ message: "Booking fail", error: error.message });
     }

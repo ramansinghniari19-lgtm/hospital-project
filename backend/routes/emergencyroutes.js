@@ -1,44 +1,55 @@
 const express = require("express");
 const router = express.Router();
 const emergency = require("../models/emergency");
-const axios = require("axios");
+const nodemailer = require("nodemailer"); 
 
-const sendSMS = async (number, message) => {
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: "ramansinghniari19@gmail.com",
+        pass: "skjh uyjf abrm hzgc"
+    },
+});
+
+const sendEmail = async (to, subject, text) => {
     try {
-        await axios.get('https://www.fast2sms.com/dev/bulkV2', {
-            params: {
-                "authorization": "26d5mXi7qTfUSYnhwA0IPvBDbZHQ3uc8zKtRjsk4CFpaGxoegVOi0CH5pgowsJVDhdKWyBaNF4tQkeEr", 
-                "route": "q",
-                "message": message,
-                "language": "english",
-                "numbers": number,
-            }
+        await transporter.sendMail({
+            from: '" SOS EMERGENCY" <ramansinghniari19@gmail.com>',
+            to: to,
+            subject: subject,
+            text: text,
         });
-        console.log("Emergency Alert SMS Sent!");
+        console.log(" Emergency Email Sent successfully!");
     } catch (error) {
-        console.error("SMS Error:", error.message);
+        console.error(" Email Error:", error.message);
     }
 };
-router.post("/sos",async(req,res)=> {
-    try{
-        const {phone,lat,lng}=req.body;
+
+router.post("/sos", async (req, res) => {
+    try {
+        const { phone, lat, lng } = req.body;
+        
         const newRequest = new emergency({
             phone,
-            location:{lat,lng}
+            location: { lat, lng }
         });
         await newRequest.save();
-        const alertMessage = `EMERGENCY! SOS received from ${phone}. Location: https://www.google.com/maps?q=${lat},${lng}. Help is on the way!`;
-      
-        await sendSMS(phone,alertMessage);
+
+        const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
+        const alertMessage = ` EMERGENCY ALERT! \n\nEk patient ne SOS dabaya hai!\n\nPhone Number: ${phone}\nLocation Link: ${mapUrl}\n\nAmbulance turant rawana karein!`;
+
+        await sendEmail("ramansinghniari19@gmail.com", "SOS REQUEST RECEIVED!", alertMessage);
         
         res.status(201).json({
             success: true,
-            message: "Ambulance dispatched! Help is on the way",
+            message: "Ambulance dispatched! Admin has been notified via Email.",
             data: newRequest
         });
       
-    }catch(error){
-        res.status(500).json({message:"SOS Failed",error:error.message});
+    } catch (error) {
+        res.status(500).json({ message: "SOS Failed", error: error.message });
     }
 });
+
 module.exports = router;
