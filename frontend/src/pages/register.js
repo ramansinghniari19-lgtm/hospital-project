@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import API from "../api";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-const handleRegister=()=>{
-    const [formData,setformData]=useState({
+const Register = () => {
+    const [formData, setFormData] = useState({
         name: '',
         email: '',
         phone: '',
@@ -12,51 +12,102 @@ const handleRegister=()=>{
         specialization: '',
         fees: '',
         experience: '',
-        bio: ''
+        bio: '',
+        address: '' // ✅ State mein hai
     });
 
-    const navigate=useNavigate();
-    const handleChange = (e)=>{
-        setFormData({...fromData,[e.target.name]:e.target.value});
+    const [profilePic, setProfilePic] = useState(null); // ✅ Image ke liye alag state
+    const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-    const handleRegister=async(e)=>{
+
+    const handleFileChange = (e) => {
+        setProfilePic(e.target.files[0]); // ✅ File select handle karna
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        try{
-            const res = await API.post('/auth/register',formData);
-            if(res.Data.success){
-                alert("Congratulations! registered");
-                navigate('login')
+        
+        // 🔥 Sabse Zaroori: Image bhejni hai toh FormData use karna padega
+        const data = new FormData();
+        data.append("name", formData.name);
+        data.append("email", formData.email);
+        data.append("phone", formData.phone);
+        data.append("password", formData.password);
+        data.append("role", formData.role);
+        data.append("address", formData.address);
+        
+        if (profilePic) {
+            data.append("profilePic", profilePic); // Backend field name check kar lena
+        }
+
+        if (formData.role === 'doctor') {
+            data.append("specialization", formData.specialization);
+            data.append("fees", formData.fees);
+            data.append("experience", formData.experience);
+            data.append("bio", formData.bio);
+        }
+
+        try {
+            const res = await API.post('/auth/register', data, {
+                headers: { "Content-Type": "multipart/form-data" } // ✅ Headers zaroori hain
+            });
+            
+            if (res.data && res.data.success) { 
+                alert("Congratulations! Everything stored in Database.");
+                navigate('/login');
             }
-        }catch(error){
-            alert(error.response?.data?.message||"wrong ! Check again");
+        } catch (error) {
+            alert(error.response?.data?.message || "Something went wrong!");
         }  
     };
-    return  (
-        <div className="register-container">
-            <form onSubmit={handleRegister} className="register-form">\
-                <h2>Join Tagore Hospital</h2>
 
-                <input type="text"  name="name" placeholder="Full Name" onChange={handleChange} required/>
-                <input type="email" name="email" placeholder="Email Address" onChange={handleChange} required />
-                <input type="text" name="phone" placeholder="Phone Number" onChange={handleChange} required />
-                <input type="password" name="password" placeholder="Set Password" onChange={handleChange} required />
+    return (
+        <div className="register-container" style={{ padding: '20px' }}>
+            <form onSubmit={handleSubmit}>
+                <h2>Tagore Hospital - Register</h2>
+                
+                <input type="text" name="name" placeholder="Name" onChange={handleChange} required />
+                <br /><br />
+                <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
+                <br /><br />
+                <input type="text" name="phone" placeholder="Phone" onChange={handleChange} required />
+                <br /><br />
+                <input type="password" name="password" placeholder="Password" onChange={handleChange} required />
+                <br /><br />
 
-                <label>Register as:</label>
-                <select name="role" value={formData.role} onChange={handleChange}>
+                {/* ✅ ADDRESS FIELD ADDED */}
+                <input type="text" name="address" placeholder="Full Address" onChange={handleChange} required />
+                <br /><br />
+
+                {/* ✅ IMAGE UPLOAD FIELD ADDED */}
+                <label>Profile Picture: </label>
+                <input type="file" name="profilePic" onChange={handleFileChange} accept="image/*" />
+                <br /><br />
+                
+                <label>Register as: </label>
+                <select name="role" onChange={handleChange}>
                     <option value="patient">Patient</option>
                     <option value="doctor">Doctor</option>
                 </select>
+
                 {formData.role === 'doctor' && (
-                    <div className="doctor-extra-fields" style={{marginTop: '20px', borderTop: '1px solid #ccc', paddingTop: '15px'}}>
-                        <h4>Professional Information</h4>
-                        <input type="text" name="specialization" placeholder="Specialization (e.g. Heart Specialist)" onChange={handleChange} required />
-                        <input type="number" name="fees" placeholder="Consultation Fees (₹)" onChange={handleChange} required />
-                        <input type="text" name="experience" placeholder="Years of Experience" onChange={handleChange} required />
-                        <textarea name="bio" placeholder="Short Bio about yourself" onChange={handleChange}></textarea>
+                    <div className="doctor-fields" style={{ marginTop: '20px', borderTop: '1px solid black' }}>
+                        <h3>Professional Details</h3>
+                        <input type="text" name="specialization" placeholder="Specialization" onChange={handleChange} required />
+                        <br /><br />
+                        <input type="number" name="fees" placeholder="Consultation Fees" onChange={handleChange} required />
+                        <br /><br />
+                        <input type="text" name="experience" placeholder="Experience (Years)" onChange={handleChange} required />
+                        <br /><br />
+                        <textarea name="bio" placeholder="Bio/Description" onChange={handleChange}></textarea>
                     </div>
                 )}
-                <button type="submit" style={{marginTop: '20px'}}>Create Account</button>
-                <p onClick={() => navigate('/login')} style={{cursor: 'pointer', color: 'blue'}}>Pehle se account hai? Login karein</p>
+
+                <br /><br />
+                <button type="submit">Register Now</button>
             </form>
         </div>
     );
