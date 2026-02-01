@@ -16,7 +16,7 @@ function App() {
           
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
-          {/* <Route path="/register" element={<Register />} /> */}
+          <Route path="/register" element={<Register />} />
 
           {/* Dashboards (Inhe hum kal detail mein banayenge) */}
           {/* <Route path="/patient-dashboard" element={<PatientDashboard />} /> */}
