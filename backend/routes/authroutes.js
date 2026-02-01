@@ -35,6 +35,8 @@ router.post ("/register",upload,async(req,res)=>{
             address:address||"",
             specialization:role ==="doctor"? specialization:"",
             fees: role === "doctor"? fees:"",
+            experience: role === "doctor" ? experience : "", 
+            bio: role === "doctor" ? bio : "",
             available:role ==="doctor"? true:false
 
 
