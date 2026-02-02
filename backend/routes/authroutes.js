@@ -15,7 +15,7 @@ const upload = multer ({storage}).single("image");
 
 router.post ("/register",upload,async(req,res)=>{
     try{
-      const { name, email, phone, password, role,gender,specialization,fees,experience,address } = req.body;
+      const { name, email, phone, password, role,gender,specialization,fees,experience,address,bio } = req.body;
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: "already!register" });
