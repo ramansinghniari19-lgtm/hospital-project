@@ -6,6 +6,7 @@ const multer = require("multer");
 const nodemailer = require("nodemailer");
 const path = require("path");
 
+// --- NODEMAILER CONFIG (Wapas aa gaya!) ---
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -28,6 +29,14 @@ const sendEmail = async (to, subject, text) => {
     }
 };
 
+const isDoctor = (req, res, next) => {
+    if (req.session && req.session.userId && req.session.role === "doctor") {
+        next();
+    } else {
+        res.status(401).json({ message: "Doctor login required or Session Expired!" });
+    }
+};
+
 const reportStorage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, "./uploads/reports"),
     filename: (req, file, cb) => cb(null, "REPORT_" + Date.now() + "_" + file.originalname)
@@ -40,7 +49,8 @@ const profileStorage = multer.diskStorage({
 });
 const uploadProfile = multer({ storage: profileStorage });
 
-router.get("/appointments/:doctorId", async (req, res) => {
+
+router.get("/appointments/:doctorId", isDoctor, async (req, res) => {
     try {
         const list = await Appointment.find({ doctorId: req.params.doctorId }).populate("patientId", "name email phone");
         res.status(200).json(list);
@@ -49,7 +59,7 @@ router.get("/appointments/:doctorId", async (req, res) => {
     }
 });
 
-router.get("/stats/:doctorId", async (req, res) => {
+router.get("/stats/:doctorId", isDoctor, async (req, res) => {
     try {
         const total = await Appointment.countDocuments({ doctorId: req.params.doctorId });
         const pending = await Appointment.countDocuments({ doctorId: req.params.doctorId, status: "pending" });
@@ -60,7 +70,7 @@ router.get("/stats/:doctorId", async (req, res) => {
     }
 });
 
-router.put("/update-profile/:id", uploadProfile.single("profilePic"), async (req, res) => {
+router.put("/update-profile/:id", isDoctor, uploadProfile.single("profilePic"), async (req, res) => {
     try {
         const { specialization, fees, experience, bio, available } = req.body;
         let updateData = { specialization, fees, experience, bio, available };
@@ -80,7 +90,7 @@ router.put("/update-profile/:id", uploadProfile.single("profilePic"), async (req
     }
 });
 
-router.put("/accept/:id", async (req, res) => {
+router.put("/accept/:id", isDoctor, async (req, res) => {
     try {
         const appointment = await Appointment.findByIdAndUpdate(
             req.params.id,
@@ -101,7 +111,7 @@ router.put("/accept/:id", async (req, res) => {
     }
 });
 
-router.put("/reject/:id", async (req, res) => {
+router.put("/reject/:id", isDoctor, async (req, res) => {
     try {
         const appointment = await Appointment.findByIdAndUpdate(
             req.params.id,
@@ -122,7 +132,7 @@ router.put("/reject/:id", async (req, res) => {
     }
 });
 
-router.post("/complete-appointment/:id", uploadReport.single("reportFile"), async (req, res) => {
+router.post("/complete-appointment/:id", isDoctor, uploadReport.single("reportFile"), async (req, res) => {
     try {
         const { medicines, diagnosis, advice } = req.body;
         const appointment = await Appointment.findById(req.params.id).populate("patientId");

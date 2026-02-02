@@ -5,6 +5,14 @@ const User = require("../models/user");
 const nodemailer = require("nodemailer"); 
 const path = require("path");
 
+const isPatient = (req, res, next) => {
+    if (req.session && req.session.userId && req.session.role === "patient") {
+        next();
+    } else {
+        res.status(401).json({ message: "Patient login required or Session Expired!" });
+    }
+};
+
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -27,7 +35,8 @@ const sendEmail = async (to, subject, text) => {
     }
 };
 
-router.get("/view-doctors", async (req, res) => {
+
+router.get("/view-doctors", isPatient, async (req, res) => {
     try {
         const doctors = await User.find({ role: "doctor" })
         .select("-password")
@@ -38,7 +47,7 @@ router.get("/view-doctors", async (req, res) => {
     }
 });
 
-router.post("/book", async (req, res) => {
+router.post("/book", isPatient, async (req, res) => {
     try {
         const { patientId, doctorId, date, time, message } = req.body;
         
@@ -78,7 +87,7 @@ router.post("/book", async (req, res) => {
     }
 });
 
-router.get("/my-medical-history/:patientId", async (req, res) => {
+router.get("/my-medical-history/:patientId", isPatient, async (req, res) => {
     try {
         const records = await Appointment.find({ patientId: req.params.patientId }).populate("doctorId", "name specialization");
         res.status(200).json(records);
@@ -86,10 +95,12 @@ router.get("/my-medical-history/:patientId", async (req, res) => {
         res.status(500).json({ message: "Fetch error" });
     }
 });
-router.get("/download-report/:filename", (req, res) => {
+
+router.get("/download-report/:filename", isPatient, (req, res) => {
     const filePath = path.join(__dirname, "../uploads", req.params.filename);
     res.download(filePath, (err) => {
         if (err) res.status(404).json({ message: "File nahi mili!" });
     });
 });
+
 module.exports = router;

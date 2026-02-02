@@ -57,28 +57,43 @@ router.post("/login", async (req, res) => {
 
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ success:false,message:"Wrong!Email" });
+            return res.status(400).json({ success: false, message: "Wrong! Email" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: "Wrong! Password" });
+            return res.status(400).json({ success: false, message: "Wrong! Password" });
         }
 
-        res.status(200).json({
-            message: "Login Successful!",
-            user: { 
-                id: user._id,
-                name: user.name,
-                role: user.role,
-                available:user.available
+        // 🔥 Session mein data bharo
+        req.session.userId = user._id;
+        req.session.role = user.role;
+        req.session.userName = user.name;
+
+        // ✅ Ye raha sahi bracket wala session save
+        req.session.save((err) => {
+            if (err) {
+                console.error("Session Save Error:", err);
+                return res.status(500).json({ success: false, message: "Session Error" });
             }
+            // Response hamesha save ke ANDAR bhejte hain
+            return res.status(200).json({
+                success: true,
+                message: "Login Successful!",
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    role: user.role,
+                    available: user.available
+                }
+            });
         });
+
     } catch (error) {
-        res.status(500).json({ message: "Server Error", error: error.message });
+        console.error("Login Error:", error);
+        res.status(500).json({ success: false, message: "Server Error" });
     }
-});
-router.get("/logout", (req, res) => {
+});router.get("/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ message: "Not SuccesFul!" });
