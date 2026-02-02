@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 const Register=()=>{
     const navigate = useNavigate();
     const formik    = useFormik({
-        initialvaluesL:{
+        initialValues:{
             name:"",
             email:"",
             phone:"",
@@ -48,6 +48,12 @@ const Register=()=>{
                 <br/>
                 <input name="address" placeholder="address"{...formik.getFieldProps("address")}required/>
                 <br/>
+                <label>Gender: </label>
+                <select name="gender" {...formik.getFieldProps("gender")}>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select><br />
 
                 <select name="role"{...formik.getFieldProps("role")}>
                     <option value="patient">Patient</option>
@@ -64,7 +70,7 @@ const Register=()=>{
                 <br/>
                 {formik.values.role==="doctor"&&(
                     <div>
-                        <input name="specilization" placeholder="specilization"{...formik.getFieldProps("specilization")}required/>
+                        <input name="specialization" placeholder="specilization"{...formik.getFieldProps("specialization")}required/>
                         <br/>
                         <input name="fees" placeholder="fees"{...formik.getFieldProps("fees")}required/>
                         <br/>
