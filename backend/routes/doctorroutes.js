@@ -51,7 +51,6 @@ const uploadProfile = multer({ storage: profileStorage });
 router.get("/public/doctor", async (req, res) => {
     try {
         const doctor = await User.find({ role: "doctor" }).select("name specialization fees");
-        // FIX: Variable mismatch fixed (doctors -> doctor)
         res.status(200).json(doctor);
     } catch (error) {
         res.status(500).json({ message: "Doctors fetch fail" });

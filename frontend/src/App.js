@@ -16,10 +16,8 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Default route: Agar koi seedha aaye toh use login par bhejo */}
           <Route path="/" element={<Navigate to="/home" />} />
           
-          {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/home" element={<Home/>}/>
@@ -27,7 +25,7 @@ function App() {
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
           <Route path="/book-appointment" element={<BookAppointment />} />
           
-          <Route path="*" element={<h2>404: Bhai galat raste aa gaye!</h2>} />
+          <Route path="*" element={<h2>404: not Found!</h2>} />
         </Routes>
       </div>
     </Router>

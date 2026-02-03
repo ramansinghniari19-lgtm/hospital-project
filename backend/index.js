@@ -20,7 +20,7 @@ app.use(
     session({
         secret:"complex-secret-key",
         resave:false,
-        saveUninitialized: true,
+        saveUninitialized: false,
         cookie:{secure: false,httpOnly: true,sameSite:"lax"}
     })
 );
