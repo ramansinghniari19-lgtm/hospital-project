@@ -21,7 +21,7 @@ app.use(
         secret:"complex-secret-key",
         resave:false,
         saveUninitialized: true,
-        cookie:{secure: false}
+        cookie:{secure: false,httpOnly: true,sameSite:"lax"}
     })
 );
 app.use("/uploads/reports", express.static(path.join(__dirname, "uploads/reports")));

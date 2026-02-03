@@ -1,11 +1,15 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import axios from "axios";
+
 import Login from "./pages/login";
 import Home from "./pages/home";
-// Baaki pages ke components (Jab ban jayenge tab import honge)
 import Register from "./pages/register";
 import PatientDashboard from "./pages/PatientDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
+import BookAppointment from "./pages/BookAppointment";
+
+axios.defaults.withCredentials = true;
 
 function App() {
   return (
@@ -19,11 +23,10 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/home" element={<Home/>}/>
-          {/* Dashboards (Inhe hum kal detail mein banayenge) */}
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+          <Route path="/book-appointment" element={<BookAppointment />} />
           
-          {/* Error Page: Agar koi galat URL daale */}
           <Route path="*" element={<h2>404: Bhai galat raste aa gaye!</h2>} />
         </Routes>
       </div>

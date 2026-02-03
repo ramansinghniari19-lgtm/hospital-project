@@ -6,7 +6,6 @@ const multer = require("multer");
 const nodemailer = require("nodemailer");
 const path = require("path");
 
-// --- NODEMAILER CONFIG (Wapas aa gaya!) ---
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -44,11 +43,30 @@ const reportStorage = multer.diskStorage({
 const uploadReport = multer({ storage: reportStorage });
 
 const profileStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, "./uploads/profilePics"),
+    destination: (req, file, cb) => cb(null, "./uploads/profile_Pics"),
     filename: (req, file, cb) => cb(null, "DP_" + Date.now() + "_" + file.originalname)
 });
 const uploadProfile = multer({ storage: profileStorage });
 
+router.get("/public/doctor", async (req, res) => {
+    try {
+        const doctor = await User.find({ role: "doctor" }).select("name specialization fees");
+        // FIX: Variable mismatch fixed (doctors -> doctor)
+        res.status(200).json(doctor);
+    } catch (error) {
+        res.status(500).json({ message: "Doctors fetch fail" });
+    }   
+});
+
+router.get("/patient", isDoctor, async (req, res) => {
+    try {
+        const patient = await User.find({ role: "patient" }).select("name email");
+        // FIX: mismatch fixed (patients -> patient)
+        res.status(200).json(patient);
+    } catch (error) {
+        res.status(500).json({ message: "error" });
+    }
+});
 
 router.get("/appointments/:doctorId", isDoctor, async (req, res) => {
     try {

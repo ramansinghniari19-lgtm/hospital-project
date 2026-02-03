@@ -7,7 +7,7 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
 
-    // Session aur Cookies ke liye zaroori hai
+    // ✅ Session aur Cookies ke liye zaroori hai
     axios.defaults.withCredentials = true;
 
     const handleLogin = async (e) => {
@@ -25,8 +25,8 @@ const Login = () => {
             if (res.data.success) {
                 alert("Login Successful! 🎉");
                 
-                // Role check karke sahi dashboard par bhejo
-                if (res.data.role === "doctor") {
+                // ✅ ROLE FIXED: backend me user.role me hai
+                if (res.data.user.role === "doctor") {
                     navigate("/doctor-dashboard");
                 } else {
                     navigate("/patient-dashboard");

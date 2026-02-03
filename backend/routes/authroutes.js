@@ -6,7 +6,7 @@ const bcrypt = require("bcryptjs");
 const fs = require("fs");
 
 const storage = multer.diskStorage({
-    destination:"./uploads",
+    destination:"./uploads/Profile_Pics",
     filename:function(req,file,cb){
         cb(null,Date.now()+"_"+file.originalname);
     },
@@ -65,18 +65,15 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ success: false, message: "Wrong! Password" });
         }
 
-        // 🔥 Session mein data bharo
         req.session.userId = user._id;
         req.session.role = user.role;
         req.session.userName = user.name;
 
-        // ✅ Ye raha sahi bracket wala session save
         req.session.save((err) => {
             if (err) {
                 console.error("Session Save Error:", err);
                 return res.status(500).json({ success: false, message: "Session Error" });
             }
-            // Response hamesha save ke ANDAR bhejte hain
             return res.status(200).json({
                 success: true,
                 message: "Login Successful!",

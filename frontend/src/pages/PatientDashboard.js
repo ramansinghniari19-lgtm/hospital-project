@@ -1,81 +1,112 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const PatientDashboard = () => {
-    const [patientData, setPatientData] = useState(null);
+    const [appointments, setAppointments] = useState([]);
     const [reports, setReports] = useState([]);
     const navigate = useNavigate();
 
-    axios.defaults.withCredentials = true;
+    const API_BASE = "http://localhost:8080/api";
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
+        const fetchPatientData = async () => {
             try {
-                const res = await axios.get("http://localhost:8080/api/patient/dashboard");
-                setPatientData(res.data.patient);
-                setReports(res.data.reports);
+                const [appRes, repRes] = await Promise.all([
+                    axios.get(`${API_BASE}/patient/appointments`, { withCredentials: true }),
+                    axios.get(`${API_BASE}/patient/reports`, { withCredentials: true })
+                ]);
+                setAppointments(appRes.data);
+                setReports(repRes.data);
             } catch (err) {
-                alert("Session expired! Please login again.");
-                navigate("/login");
+                if (err.response && err.response.status === 401) {
+                    navigate("/login");
+                }
             }
         };
-        fetchDashboardData();
+        fetchPatientData();
     }, [navigate]);
 
     const handleLogout = async () => {
-        await axios.post("http://localhost:8080/api/auth/logout");
-        navigate("/login");
+        try {
+            await axios.get(`${API_BASE}/auth/logout`, { withCredentials: true });
+            navigate("/login");
+        } catch (err) {
+            navigate("/login");
+        }
     };
 
     return (
-        <div style={{ padding: "20px" }}>
-            <nav style={{ display: "flex", justifyContent: "space-between" }}>
+        <div>
+            <nav style={{ display: "flex", justifyContent: "space-between", padding: "10px", borderBottom: "1px solid #ccc" }}>
                 <h2>Patient Dashboard</h2>
-                <button onClick={handleLogout} style={{ background: "orange" }}>Logout</button>
+                <div>
+                    {/* --- NAYA BUTTON: BOOKING KE LIYE --- */}
+                    <button 
+                        onClick={() => navigate("/book-appointment")} 
+                        style={{ marginRight: "10px", backgroundColor: "green", color: "white", padding: "5px 10px", cursor: "pointer" }}
+                    >
+                        + Book New Appointment
+                    </button>
+                    <button onClick={handleLogout} style={{ padding: "5px 10px", cursor: "pointer" }}>Logout</button>
+                </div>
             </nav>
 
-            <hr />
-
-            <section>
-                <h3>Welcome, {patientData?.name || "Patient"}! 👋</h3>
-                <p><strong>Email:</strong> {patientData?.email}</p>
-                <p><strong>Phone:</strong> {patientData?.phone || "N/A"}</p>
-            </section>
-
-            <hr />
-
-            <section>
-                <h3>My Medical Reports 📄</h3>
-                {reports.length > 0 ? (
-                    <table border="1" cellPadding="10" style={{ width: "100%", textAlign: "left" }}>
-                        <thead>
-                            <tr>
-                                <th>Report Name</th>
-                                <th>Doctor Name</th>
-                                <th>Date</th>
-                                <th>Action</th>
+            <div style={{ marginTop: "20px" }}>
+                <h3>My Appointments</h3>
+                <table border="1" cellPadding="10" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                        <tr>
+                            <th>Doctor</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {appointments.length > 0 ? appointments.map((app) => (
+                            <tr key={app._id}>
+                                <td>{app.doctorName || "Doctor"}</td>
+                                <td>{new Date(app.date).toLocaleDateString()}</td>
+                                <td><b>{app.status}</b></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {reports.map((report) => (
-                                <tr key={report._id}>
-                                    <td>{report.title}</td>
-                                    <td>{report.doctorName}</td>
-                                    <td>{new Date(report.createdAt).toLocaleDateString()}</td>
-                                    <td>
-                                        <a href={`http://localhost:8080/${report.filePath}`} target="_blank" rel="noreferrer">
-                                            View / Download
-                                        </a>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <p>Abhi tak koi report upload nahi hui hai.</p>
-                )}
-            </section>
+                        )) : (
+                            <tr><td colSpan="3">No appointments found. Book one now!</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style={{ marginTop: "30px" }}>
+                <h3>My Medical Reports</h3>
+                <table border="1" cellPadding="10" style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {reports.length > 0 ? reports.map((report) => (
+                            <tr key={report._id}>
+                                <td>{report.title}</td>
+                                <td>{new Date(report.createdAt).toLocaleDateString()}</td>
+                                <td>
+                                    <a 
+                                        href={`http://localhost:8080/uploads/reports/${report.reportFile}`} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                    >
+                                        View/Download
+                                    </a>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="3">No reports available yet.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
