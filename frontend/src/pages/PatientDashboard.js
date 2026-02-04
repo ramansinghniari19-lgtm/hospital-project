@@ -7,17 +7,28 @@ const PatientDashboard = () => {
     const [reports, setReports] = useState([]);
     const navigate = useNavigate();
 
-    const API_BASE = "http://localhost:8080/api";
+    const API_BASE = "http://localhost:8080/api/patient";
 
     useEffect(() => {
         const fetchPatientData = async () => {
             try {
-                const [appRes, repRes] = await Promise.all([
-                    axios.get(`${API_BASE}/patient/appointments`, { withCredentials: true }),
-                    axios.get(`${API_BASE}/patient/reports`, { withCredentials: true })
-                ]);
-                setAppointments(appRes.data);
-                setReports(repRes.data);
+                const res = await axios.get(`${API_BASE}/my-medical-history`, { withCredentials: true });
+                setAppointments(res.data);
+
+                const allReports = [];
+                res.data.forEach(app => {
+                    if (app.reports && app.reports.length > 0) {
+                        app.reports.forEach(rep => {
+                            allReports.push({
+                                ...rep,
+                                doctorName: app.doctorId?.name || "Doctor",
+                                appointmentId: app._id
+                            });
+                        });
+                    }
+                });
+                setReports(allReports);
+
             } catch (err) {
                 if (err.response && err.response.status === 401) {
                     navigate("/login");
@@ -29,7 +40,7 @@ const PatientDashboard = () => {
 
     const handleLogout = async () => {
         try {
-            await axios.get(`${API_BASE}/auth/logout`, { withCredentials: true });
+            await axios.get("http://localhost:8080/api/auth/logout", { withCredentials: true });
             navigate("/login");
         } catch (err) {
             navigate("/login");
@@ -41,7 +52,6 @@ const PatientDashboard = () => {
             <nav style={{ display: "flex", justifyContent: "space-between", padding: "10px", borderBottom: "1px solid #ccc" }}>
                 <h2>Patient Dashboard</h2>
                 <div>
-                    {/* --- NAYA BUTTON: BOOKING KE LIYE --- */}
                     <button 
                         onClick={() => navigate("/book-appointment")} 
                         style={{ marginRight: "10px", backgroundColor: "green", color: "white", padding: "5px 10px", cursor: "pointer" }}
@@ -65,9 +75,9 @@ const PatientDashboard = () => {
                     <tbody>
                         {appointments.length > 0 ? appointments.map((app) => (
                             <tr key={app._id}>
-                                <td>{app.doctorName || "Doctor"}</td>
-                                <td>{new Date(app.date).toLocaleDateString()}</td>
-                                <td><b>{app.status}</b></td>
+                                <td>{app.doctorId?.name || "Doctor"}</td>
+                                <td>{app.date}</td>
+                                <td><b style={{ color: app.status === "Accepted" ? "green" : "orange" }}>{app.status}</b></td>
                             </tr>
                         )) : (
                             <tr><td colSpan="3">No appointments found. Book one now!</td></tr>
@@ -82,20 +92,22 @@ const PatientDashboard = () => {
                     <thead>
                         <tr>
                             <th>Title</th>
-                            <th>Date</th>
+                            <th>Doctor</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {reports.length > 0 ? reports.map((report) => (
-                            <tr key={report._id}>
-                                <td>{report.title}</td>
-                                <td>{new Date(report.createdAt).toLocaleDateString()}</td>
+                        {reports.length > 0 ? reports.map((report, index) => (
+                            <tr key={index}>
+                                <td>{report.reportName || "Medical Report"}</td>
+                                <td>{report.doctorName}</td>
                                 <td>
+                                    {/* Yahan hum direct static path use kar rahe hain jo sabse safe hai */}
                                     <a 
-                                        href={`http://localhost:8080/uploads/reports/${report.reportFile}`} 
+                                        href={`http://localhost:8080/uploads/reports/${report.fileUrl}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
+                                        style={{ color: "blue", textDecoration: "underline", fontWeight: "bold" }}
                                     >
                                         View/Download
                                     </a>

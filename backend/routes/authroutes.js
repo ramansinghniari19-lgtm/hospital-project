@@ -65,6 +65,12 @@ router.post("/login", async (req, res) => {
             return res.status(400).json({ success: false, message: "Wrong! Password" });
         }
 
+        req.session.user = {
+            _id: user._id,
+            role: user.role,
+            name: user.name
+        };
+
         req.session.userId = user._id;
         req.session.role = user.role;
         req.session.userName = user.name;
@@ -90,7 +96,8 @@ router.post("/login", async (req, res) => {
         console.error("Login Error:", error);
         res.status(500).json({ success: false, message: "Server Error" });
     }
-});router.get("/logout", (req, res) => {
+});
+router.get("/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ message: "Not SuccesFul!" });

@@ -1,176 +1,144 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 
 const DoctorDashboard = () => {
-    const [patients, setPatients] = useState([]);
     const [appointments, setAppointments] = useState([]);
+    const [patients, setPatients] = useState([]);
     const [selectedPatient, setSelectedPatient] = useState("");
     const [title, setTitle] = useState("");
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
 
-    const API_BASE = "http://localhost:8080/api";
+    const API_BASE = "http://localhost:8080/api/doctor";
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const userData = localStorage.getItem("user");
+                if (!userData) return;
+                const user = JSON.parse(userData);
+                const doctorId = user._id || user.id;
+
                 const [pRes, aRes] = await Promise.all([
-                    axios.get(`${API_BASE}/doctor/patients`, { withCredentials: true }),
-                    axios.get(`${API_BASE}/doctor/appointments`, { withCredentials: true })
+                    axios.get(`${API_BASE}/patient`, { withCredentials: true }),
+                    axios.get(`${API_BASE}/appointments/${doctorId}`, { withCredentials: true })
                 ]);
-                setPatients(pRes.data);
-                setAppointments(aRes.data);
+
+                setPatients(pRes.data || []);
+                setAppointments(aRes.data || []);
             } catch (err) {
-                if (err.response && err.response.status === 401) {
-                    navigate("/login");
-                }
+                console.error("Fetch Error:", err);
             }
         };
         fetchData();
-    }, [navigate]);
+    }, []);
 
-    const handleStatusUpdate = async (id, newStatus) => {
+    const handleAction = async (id, actionType) => {
         try {
-            const res = await axios.put(
-                `${API_BASE}/doctor/update-status/${id}`, 
-                { status: newStatus }, 
-                { withCredentials: true }
-            );
-            if (res.status === 200) {
-                setAppointments(prev => prev.map(app => 
-                    app._id === id ? { ...app, status: newStatus } : app
-                ));
-            }
-        } catch (err) {
-            alert("Update failed");
-        }
+            const route = actionType === "accept" ? "accept" : "reject";
+            await axios.put(`${API_BASE}/${route}/${id}`, {}, { withCredentials: true });
+            alert(`Appointment ${actionType === "accept" ? "Accepted" : "Rejected"}!`);
+            setAppointments(prev => prev.map(a => a._id === id ? { ...a, status: actionType === "accept" ? "Accepted" : "Rejected" } : a));
+        } catch (err) { alert("Action failed!"); }
     };
 
     const handleUpload = async (e) => {
         e.preventDefault();
+        if (!selectedPatient || !file) return alert("Please select patient and file");
+        
         setLoading(true);
         const formData = new FormData();
-        formData.append("patientId", selectedPatient);
-        formData.append("title", title);
-        formData.append("report", file);
+        formData.append("reportFile", file); // Backend 'reportFile' mang raha hai
+        formData.append("reportName", title);
 
         try {
-            await axios.post(`${API_BASE}/doctor/upload`, formData, {
+            // Aapka backend /complete-appointment/:id route use kar raha hai report ke liye
+            // Hum pehle dropdown se patient dhundenge
+            await axios.post(`${API_BASE}/complete-appointment/${selectedPatient}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 withCredentials: true
             });
-            alert("✅ Report Uploaded Successfully!");
+            alert("✅ Report & Prescription Uploaded!");
             setTitle("");
             setFile(null);
-            setSelectedPatient("");
-            document.getElementById("fileInput").value = "";
         } catch (err) {
-            alert("Upload failed");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
-            await axios.get(`${API_BASE}/auth/logout`, { withCredentials: true });
-            navigate("/login");
-        } catch (err) {
-            navigate("/login");
-        }
+            alert("Upload failed! Check if appointment ID is correct.");
+        } finally { setLoading(false); }
     };
 
     return (
-        <div className="bg-light min-vh-100">
-            {/* Navbar */}
-            <nav className="navbar navbar-dark bg-primary shadow-sm mb-4">
-                <div className="container">
-                    <span className="navbar-brand mb-0 h1">👨‍⚕️ Doctor Dashboard</span>
-                    <button className="btn btn-danger btn-sm" onClick={handleLogout}>Logout</button>
-                </div>
-            </nav>
-
-            <div className="container">
-                <div className="row">
-                    {/* Appointments Table */}
-                    <div className="col-lg-8 mb-4">
-                        <div className="card shadow-sm">
-                            <div className="card-header bg-white">
-                                <h5 className="mb-0">📅 Patient Appointments</h5>
-                            </div>
-                            <div className="card-body p-0">
-                                <div className="table-responsive">
-                                    <table className="table table-hover mb-0">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th>Patient Name</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {appointments.length > 0 ? (
-                                                appointments.map((app) => (
-                                                    <tr key={app._id}>
-                                                        <td className="align-middle">{app.patientName || "User"}</td>
-                                                        <td className="align-middle">
-                                                            <span className={`badge ${app.status === 'Accepted' ? 'bg-success' : app.status === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark'}`}>
-                                                                {app.status}
-                                                            </span>
-                                                        </td>
-                                                        <td>
-                                                            {app.status === "Pending" && (
-                                                                <div className="btn-group btn-group-sm">
-                                                                    <button className="btn btn-outline-success" onClick={() => handleStatusUpdate(app._id, "Accepted")}>Accept</button>
-                                                                    <button className="btn btn-outline-danger" onClick={() => handleStatusUpdate(app._id, "Rejected")}>Reject</button>
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr><td colSpan="3" className="text-center p-3 text-muted">No appointments found.</td></tr>
+        <div style={{ padding: "30px", backgroundColor: "#f4f7f6", minHeight: "100vh", fontFamily: 'Segoe UI' }}>
+            <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+                <h2 style={{ color: "#2c3e50", marginBottom: "20px" }}>👨‍⚕️ Tagore Hospital - Doctor Panel</h2>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "25px" }}>
+                    
+                    {/* LEFT: APPOINTMENTS */}
+                    <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)" }}>
+                        <h4 style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}>📅 New Requests</h4>
+                        <table width="100%" style={{ borderCollapse: "collapse", marginTop: "15px" }}>
+                            <thead>
+                                <tr style={{ textAlign: "left", color: "#7f8c8d", fontSize: "14px" }}>
+                                    <th style={{ padding: "12px" }}>PATIENT</th>
+                                    <th style={{ padding: "12px" }}>STATUS</th>
+                                    <th style={{ padding: "12px" }}>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {appointments.length > 0 ? appointments.map((app) => (
+                                    <tr key={app._id} style={{ borderBottom: "1px solid #f9f9f9" }}>
+                                        <td style={{ padding: "12px" }}>
+                                            <b>{app.patientId?.name || "Patient"}</b><br/>
+                                            <small>{app.date} | {app.time}</small>
+                                        </td>
+                                        <td style={{ padding: "12px" }}>
+                                            <span style={{ padding: "4px 10px", borderRadius: "20px", fontSize: "12px", 
+                                                backgroundColor: app.status === "Accepted" ? "#e1f7e3" : "#fff3cd",
+                                                color: app.status === "Accepted" ? "#2ecc71" : "#f1c40f" }}>
+                                                {app.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: "12px" }}>
+                                            {app.status === "pending" && (
+                                                <>
+                                                    <button onClick={() => handleAction(app._id, "accept")} style={{ background: "#2ecc71", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer", marginRight: "5px" }}>Accept</button>
+                                                    <button onClick={() => handleAction(app._id, "reject")} style={{ background: "#e74c3c", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer" }}>Reject</button>
+                                                </>
                                             )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr><td colSpan="3" style={{ textAlign: "center", padding: "30px", color: "#95a5a6" }}>No appointment requests yet.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
 
-                    {/* Report Upload Form */}
-                    <div className="col-lg-4">
-                        <div className="card shadow-sm">
-                            <div className="card-header bg-white text-center">
-                                <h5 className="mb-0">📤 Upload Medical Report</h5>
-                            </div>
-                            <div className="card-body">
-                                <form onSubmit={handleUpload}>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-bold">Select Patient</label>
-                                        <select className="form-select" value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} required>
-                                            <option value="">Choose...</option>
-                                            {patients.map((p) => (
-                                                <option key={p._id} value={p._id}>{p.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-bold">Report Title</label>
-                                        <input type="text" className="form-control" placeholder="e.g., Blood Test" value={title} onChange={(e) => setTitle(e.target.value)} required />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label fw-bold">File (PDF/Image)</label>
-                                        <input id="fileInput" type="file" className="form-control" onChange={(e) => setFile(e.target.files[0])} required />
-                                    </div>
-                                    <button type="submit" className="btn btn-primary w-100 fw-bold" disabled={loading}>
-                                        {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : "🚀 Send Report"}
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                    {/* RIGHT: REPORT UPLOAD */}
+                    <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", height: "fit-content" }}>
+                        <h4 style={{ marginBottom: "20px" }}>📤 Upload Report</h4>
+                        <form onSubmit={handleUpload}>
+                            <label style={{ fontSize: "13px", fontWeight: "600" }}>Select Appointment ID</label>
+                            <select style={{ width: "100%", padding: "10px", margin: "8px 0 15px", borderRadius: "6px", border: "1px solid #ddd" }} 
+                                    value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} required>
+                                <option value="">Select ID</option>
+                                {appointments.filter(a => a.status === "Accepted").map(a => (
+                                    <option key={a._id} value={a._id}>{a.patientId?.name} ({a.date})</option>
+                                ))}
+                            </select>
+
+                            <label style={{ fontSize: "13px", fontWeight: "600" }}>Report Title</label>
+                            <input type="text" style={{ width: "100%", padding: "10px", margin: "8px 0 15px", borderRadius: "6px", border: "1px solid #ddd" }} 
+                                   value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. X-Ray Report" required />
+
+                            <label style={{ fontSize: "13px", fontWeight: "600" }}>File</label>
+                            <input type="file" style={{ width: "100%", margin: "8px 0 20px" }} 
+                                   onChange={(e) => setFile(e.target.files[0])} required />
+
+                            <button type="submit" disabled={loading} style={{ width: "100%", padding: "12px", background: "#3498db", color: "#fff", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}>
+                                {loading ? "Uploading..." : "Complete & Send"}
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
