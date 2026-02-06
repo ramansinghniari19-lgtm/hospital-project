@@ -5,9 +5,7 @@ const User = require("../models/user");
 const nodemailer = require("nodemailer");
 const path = require("path");
 
-/* =======================
-   PATIENT AUTH MIDDLEWARE
-======================= */
+
 const isPatient = (req, res, next) => {
     if (req.session?.user && req.session.user.role === "patient") {
         next();
@@ -18,9 +16,7 @@ const isPatient = (req, res, next) => {
     }
 };
 
-/* =======================
-   EMAIL CONFIG
-======================= */
+
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -37,15 +33,13 @@ const sendEmail = async (to, subject, text) => {
             subject,
             text
         });
-        console.log("📧 Email sent to:", to);
+        console.log(" Email sent to:", to);
     } catch (error) {
         console.error("Email error:", error.message);
     }
 };
 
-/* =======================
-   VIEW DOCTORS
-======================= */
+
 router.get("/view-doctors", isPatient, async (req, res) => {
     try {
         const doctors = await User.find({ role: "doctor" })
@@ -58,9 +52,7 @@ router.get("/view-doctors", isPatient, async (req, res) => {
     }
 });
 
-/* =======================
-   BOOK APPOINTMENT (FIXED)
-======================= */
+
 router.post("/book", isPatient, async (req, res) => {
     try {
         const { doctorId, date, time, message } = req.body;
@@ -72,7 +64,7 @@ router.post("/book", isPatient, async (req, res) => {
         }
 
         const newAppointment = new Appointment({
-            patientId: req.session.user._id, // 🔥 FIX
+            patientId: req.session.user._id,
             doctorId,
             date,
             time,
@@ -92,7 +84,7 @@ router.post("/book", isPatient, async (req, res) => {
             );
         }
 
-        // AUTO REJECT AFTER 5 MIN
+        
         setTimeout(async () => {
             const checkAppointment = await Appointment.findById(newAppointment._id)
                 .populate("patientId");
@@ -127,9 +119,7 @@ router.post("/book", isPatient, async (req, res) => {
     }
 });
 
-/* =======================
-   MEDICAL HISTORY
-======================= */
+
 router.get("/my-medical-history", isPatient, async (req, res) => {
     try {
         const records = await Appointment.find({
@@ -142,9 +132,7 @@ router.get("/my-medical-history", isPatient, async (req, res) => {
     }
 });
 
-/* =======================
-   DOWNLOAD REPORT
-======================= */
+
 router.get("/download-report/:filename", isPatient, (req, res) => {
     const filePath = path.join(__dirname, "../uploads", req.params.filename);
 
