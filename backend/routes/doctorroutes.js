@@ -6,10 +6,9 @@ const multer = require("multer");
 const nodemailer = require("nodemailer");
 const path = require("path");
 
-// 👇 NAYI LINE: Middleware ko bahar se bulaya
 const { isDoctor } = require("../middleware/auth"); 
 
-// --- Email Config (Tera Purana Code) ---
+//  Email Config 
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -27,7 +26,7 @@ const sendEmail = async (to, subject, text) => {
     } catch (err) { console.log("Email Error:", err.message); }
 };
 
-// --- Multer Setup (Reports ke liye) ---
+// Multer Setup (Reports ke liye)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => { cb(null, "uploads/reports/"); },
     filename: (req, file, cb) => {
@@ -36,28 +35,28 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --- ROUTES ---
+// ROUTES 
 
-// 1. Doctors ki list dikhana (Public)
+//  Doctors list  (Public)
 router.get("/public/doctor", async (req, res) => {
     const doctors = await User.find({ role: "doctor" }).select("name specialization fees");
     res.json(doctors);
 });
 
-// 2. Patients ki list (Sirf Doctor dekh sakta hai)
+//  Patients ki list (Sirf Doctor dekh sakta hai)
 router.get("/patient", isDoctor, async (req, res) => {
     const patient = await User.find({ role: "patient" }).select("name email");
     res.json(patient);
 });
 
-// 3. Appointments dekhna
+//  Appointments 
 router.get("/appointments/:doctorId", isDoctor, async (req, res) => {
     const list = await Appointment.find({ doctorId: req.params.doctorId })
         .populate("patientId", "name email phone");
     res.json(list);
 });
 
-// 4. Accept Appointment
+//  Accept Appointment
 router.put("/accept/:id", isDoctor, async (req, res) => {
     const appointment = await Appointment.findByIdAndUpdate(
         req.params.id, { status: "Accepted" }, { new: true }
@@ -69,7 +68,7 @@ router.put("/accept/:id", isDoctor, async (req, res) => {
     res.json(appointment);
 });
 
-// 5. Reject Appointment
+//  Reject Appointment
 router.put("/reject/:id", isDoctor, async (req, res) => {
     const appointment = await Appointment.findByIdAndUpdate(
         req.params.id, { status: "Rejected" }, { new: true }
@@ -81,7 +80,7 @@ router.put("/reject/:id", isDoctor, async (req, res) => {
     res.json(appointment);
 });
 
-// 6. Complete & Upload Report (YE NAYA HAI)
+//  Complete & Upload Report
 router.post("/complete-appointment/:id", isDoctor, upload.single("reportFile"), async (req, res) => {
     try {
         const appointment = await Appointment.findById(req.params.id).populate("patientId");
@@ -94,7 +93,11 @@ router.post("/complete-appointment/:id", isDoctor, upload.single("reportFile"), 
                 fileUrl: req.file.filename
             });
         }
-        await appointment.save();
+                await appointment.save();
+
+        if (appointment?.patientId?.email) {
+        await sendEmail(appointment.patientId.email, "Medical report update ! Please check", ` ${appointment.patientId.name}, now download it `);
+    }
         res.json({ message: "Report uploaded and appointment completed!" });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
