@@ -27,16 +27,12 @@
     };
 
 
-router.get(
-  "/view-doctors",
-  isAuthenticated,   
-  isPatient,         
-  async (req, res) => {
+router.get("/view-doctors",isAuthenticated,   isPatient,async (req, res) => {
     const doctors = await User.find({ role: "doctor" });
     res.json(doctors);
   }
 );
-    router.post("/book", isAuthenticated, isPatient, async (req, res) => {
+ router.post("/book", isAuthenticated, isPatient, async (req, res) => {
         try {
             const { doctorId, date, time, message } = req.body;
             
@@ -52,20 +48,32 @@ router.get(
             });
 
             await newAppointment.save();
+
+            const io =req.app.get("socketio");
             const patient = await User.findById(patientId);
 
-            if (patient?.email) {
-                await sendEmail(patient.email, "Request Sent", `Hi ${patient.name}, request sent for ${date}.`);
+            if(io){
+                io.to(doctorId).emit("new_appointment",{
+                      message:`New appointment request from${patient.name}`,
+                    date:date,
+                    time:time,
+                    patientId:patientId
+                });
+                console.log("Notification sent to doctor:",doctorId);
             }
 
-            res.status(201).json({ message: "Booked!", appointmentId: newAppointment._id });
+
+            if (patient?.email) {
+                 sendEmail(patient.email, "Request Sent", `Hi ${patient.name}, request for ${date}at${time}has been sent.`);
+            }
+
+            res.status(201).json({  success:true, message: "Booked!", appointmentId: newAppointment._id });
         } catch (error) {
             res.status(500).json({ message: "Booking fail", error: error.message });
         }
     });
 router.get("/dashboard-data", isAuthenticated, isPatient, async (req, res) => {
     try {
-        // Saari appointments nikalo aur doctor ki details populate karo
         const appointments = await Appointment.find({ patientId: req.user.id })
             .populate("doctorId", "name specialization")
             .sort({ createdAt: -1 });

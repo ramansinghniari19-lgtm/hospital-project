@@ -1,11 +1,11 @@
 import React,{createContext,useState,useEffect} from "react";
 
-export const Authcontext=createContext();
+export const Authcontext = createContext();
 
-export const AuthProvider =({children})=>{
-    const[user,setUser]=useState(null);
-    const [loading,setLoading]= useState(true);
+export const AuthProvider = ({children}) => {
 
+    const [user,setUser] = useState(null);
+    const [loading,setLoading] = useState(true);
 
     useEffect(()=>{
         const savedUser = localStorage.getItem("user");
@@ -13,20 +13,25 @@ export const AuthProvider =({children})=>{
             setUser(JSON.parse(savedUser));
         }
         setLoading(false);
-    },[])
-     
-    const login = (userData)=>{
-        setUser(userData);
-        localStorage.setItem("user",JSON.stringify(userData));
-    } ;
+    },[]);
+
+    const login = (userData, token) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", token);   
+};
+
+
     const logout = () =>{
         setUser(null);
         localStorage.removeItem("user");
+        localStorage.removeItem("token");  
         window.location.href = "/login";
     };
+
     return(
-      <  Authcontext.Provider value ={{user,login,logout,loading}}>
-      {!loading && children}
-      </Authcontext.Provider>
-    )
-}
+        <Authcontext.Provider value={{user,login,logout,loading}}>
+            {!loading && children}
+        </Authcontext.Provider>
+    );
+};

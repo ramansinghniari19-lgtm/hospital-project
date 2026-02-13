@@ -1,8 +1,16 @@
 import axios from "axios";
+
 const API = axios.create({
-    baseURL:"http://localhost:8080/api" ,
-    withCredentials:true
+  baseURL: "http://localhost:8080/api",
+  withCredentials: true
 });
 
-export const IMG_URL="http://localhost:8080/uploads/Profile_Pics/";
+API.interceptors.request.use((req) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    req.headers.Authorization = `Bearer ${token}`;
+  }
+  return req;
+});
+
 export default API;

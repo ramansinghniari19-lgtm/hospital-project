@@ -1,46 +1,30 @@
-import {useNavigate} from "react-router-dom";
-import  API from "../services/api";
-import axios from "axios";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
- const Home =()=>{
+const Home = () => {
     const navigate = useNavigate();
-    const handleEmergency = async()=>{
-        try{
-           const res = await axios.post("http://localhost:8080/api/emergency/emergency", {
-            message: "Emergency alert triggered from website Home Page!",
-            time: new Date().toLocaleString()
-        });
-            
-           if (res.status === 200 || res.data.success) {
-            alert("Emergency Alert sent to Hospital! Help is on the way.");
-        }
-        }catch(error){
-            console.error("Mail failed",error);
-            alert("Emergency contact failed . Please call 108 0r 112 directly!");
-        }
-    };
-    return(
-        <div className="home-container">
-            <header className="hero">
-                <h1>Hospital</h1>
-                <p>Advance Medical Care & real-time Reports</p>
 
-                <div className="emergency-section">
-                    <button className="emergency-btn blink" onClick={handleEmergency}>
-                        Send Emergency  Alert
-                    </button>
-                    <h3>or call +91 9115585258</h3>
+    return (
+        <div className="home-container">
+            <nav className="navbar">
+                <div className="logo" style={{fontSize: '24px', fontWeight: 'bold'}}>🏥 Tagore Hospital</div>
+                <div className="nav-right">
+                    <button className="nav-btn" onClick={() => navigate('/login')}>Login</button>
+                    <button className="nav-btn" onClick={() => navigate('/register')}>Register</button>
+                    <button className="nav-btn nav-emergency" onClick={() => navigate('/emergency')}>🚨 Emergency</button>
                 </div>
-            </header>
-            <div className="auth-options">
-                <h2>Join our Medical Network</h2>
-                <div className="btn-group"> 
-                    <button className="main-btn" onClick={()=>navigate("/login")}>Login Account </button>
-                    <button className="main-btn outline" onClick={()=>navigate("/Register")}>Register</button>
-                </div>
-                     </div>
+            </nav>
+
+            <div className="hero" style={{textAlign: 'center', padding: '100px 20px'}}>
+                <h1>Compassion. Care. Innovation.</h1>
+                <p>Leading the way in medical excellence.</p>
+            </div>
+
+            <div className="services-preview-section">
+            </div>
+            <footer className='Footer'> <span >tg@gmail.com </span> <span >+91 9115585258</span> </footer>
         </div>
     );
+}
 
-};
 export default Home;

@@ -5,8 +5,29 @@ const mongoose = require("mongoose");
 const path = require("path");
 const cors = require("cors");
 const app = express();
+const http = require("http");
+const{Server} = require("socket.io");
 const PORT=process.env.PORT||8080;
 
+const server = http.createServer(app);
+const  io = new Server(server,{
+    cors:{
+        origin:"http//localhost:5173",
+        methods:["GET","POST"]
+    }
+}); 
+io.on("connection",(socket)=>{
+    console.log("New Client Connected:",socket.id);
+
+    socket.on("join_room",(userId)=>{
+        socket.join(userId);
+        console.log(`user${userId}joined their personal room`);
+    });
+    socket.on("disconnect",()=>{
+        console.log ("client Disconnected");
+    });
+});
+app.set("socketio",io);
 
 app.use(cors({
     origin: "http://localhost:5173", 
