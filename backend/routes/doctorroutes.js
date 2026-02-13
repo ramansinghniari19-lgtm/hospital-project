@@ -5,10 +5,9 @@ const User = require("../models/user");
 const multer = require("multer");
 const nodemailer = require("nodemailer");
 const path = require("path");
+const fs = require("fs");
+const { isAuthenticated, isDoctor } = require("../middleware/auth"); 
 
-const { isDoctor } = require("../middleware/auth"); 
-
-//  Email Config 
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -23,41 +22,39 @@ const sendEmail = async (to, subject, text) => {
             from: '"Tagore Hospital" <ramansinghniari19@gmail.com>',
             to, subject, text
         });
-    } catch (err) { console.log("Email Error:", err.message); }
+    } catch (err) { console.log(err.message); }
 };
 
-// Multer Setup (Reports ke liye)
+const uploadDir = "uploads/reports/";
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => { cb(null, "uploads/reports/"); },
+    destination: (req, file, cb) => { cb(null, uploadDir); },
     filename: (req, file, cb) => {
         cb(null, Date.now() + "-" + file.originalname);
     }
 });
 const upload = multer({ storage });
 
-// ROUTES 
-
-//  Doctors list  (Public)
 router.get("/public/doctor", async (req, res) => {
     const doctors = await User.find({ role: "doctor" }).select("name specialization fees");
     res.json(doctors);
 });
 
-//  Patients ki list (Sirf Doctor dekh sakta hai)
-router.get("/patient", isDoctor, async (req, res) => {
+router.get("/patient", isAuthenticated, isDoctor, async (req, res) => {
     const patient = await User.find({ role: "patient" }).select("name email");
     res.json(patient);
 });
 
-//  Appointments 
-router.get("/appointments/:doctorId", isDoctor, async (req, res) => {
-    const list = await Appointment.find({ doctorId: req.params.doctorId })
+router.get("/appointments", isAuthenticated, isDoctor, async (req, res) => {
+    const list = await Appointment.find({ doctorId: req.user.id })
         .populate("patientId", "name email phone");
     res.json(list);
 });
 
-//  Accept Appointment
-router.put("/accept/:id", isDoctor, async (req, res) => {
+router.put("/accept/:id", isAuthenticated, isDoctor, async (req, res) => {
     const appointment = await Appointment.findByIdAndUpdate(
         req.params.id, { status: "Accepted" }, { new: true }
     ).populate("patientId");
@@ -68,8 +65,7 @@ router.put("/accept/:id", isDoctor, async (req, res) => {
     res.json(appointment);
 });
 
-//  Reject Appointment
-router.put("/reject/:id", isDoctor, async (req, res) => {
+router.put("/reject/:id", isAuthenticated, isDoctor, async (req, res) => {
     const appointment = await Appointment.findByIdAndUpdate(
         req.params.id, { status: "Rejected" }, { new: true }
     ).populate("patientId");
@@ -80,11 +76,10 @@ router.put("/reject/:id", isDoctor, async (req, res) => {
     res.json(appointment);
 });
 
-//  Complete & Upload Report
-router.post("/complete-appointment/:id", isDoctor, upload.single("reportFile"), async (req, res) => {
+router.post("/complete-appointment/:id", isAuthenticated, isDoctor, upload.single("reportFile"), async (req, res) => {
     try {
         const appointment = await Appointment.findById(req.params.id).populate("patientId");
-        if (!appointment) return res.status(404).json({ message: "Appointment not found" });
+        if (!appointment) return res.status(404).json({ message: "Not found" });
 
         appointment.status = "Completed";
         if (req.file) {
@@ -93,12 +88,12 @@ router.post("/complete-appointment/:id", isDoctor, upload.single("reportFile"), 
                 fileUrl: req.file.filename
             });
         }
-                await appointment.save();
+        await appointment.save();
 
         if (appointment?.patientId?.email) {
-        await sendEmail(appointment.patientId.email, "Medical report update ! Please check", ` ${appointment.patientId.name}, now download it `);
-    }
-        res.json({ message: "Report uploaded and appointment completed!" });
+            await sendEmail(appointment.patientId.email, "Medical Report Ready", `Hi ${appointment.patientId.name}, your report is ready for download.`);
+        }
+        res.json({ message: "Completed!" });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

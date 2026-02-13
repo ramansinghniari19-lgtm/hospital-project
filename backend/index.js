@@ -26,7 +26,7 @@ app.use(
     })
 );
 app.use("/uploads/reports", express.static(path.join(__dirname, "uploads/reports")));
-app.use("/uploads/profilePics", express.static(path.join(__dirname, "uploads/profilePics")));
+app.use("/uploads/profilePics", express.static(path.join(__dirname, "uploads/Profile_Pics")));
 
 app.get('/',(req,res)=>{
     res.send('Server is  running on 8080');
@@ -37,10 +37,12 @@ app.use("/api/doctor", require("./routes/doctorroutes"));
 app.use("/api/emergency",require("./routes/emergencyroutes"));
 
 mongoose
-.connect (process.env.DB_URI)
-.then(() =>{ console.log("Connected to the database")
-app.listen(PORT,()=>{console.log(`Server running on port :${PORT} `);
-});
+.connect(process.env.DB_URI)
+.then(() => { 
+    console.log("Connected to database:", mongoose.connection.name); // Yeh line database ka naam batayegi
+    app.listen(PORT, () => {
+        console.log(`Server running on port :${PORT}`);
+    });
 })
 .catch((error) => {console.error("Database connection fail",error)
     process.exit(1);
