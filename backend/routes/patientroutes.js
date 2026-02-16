@@ -83,6 +83,29 @@ router.get("/dashboard-data", isAuthenticated, isPatient, async (req, res) => {
         res.status(500).json({ message: "Dashboard data fetch error", error: error.message });
     }
 });
+router.get("/appointment/:id", async (req, res) => {
+    try {
+        const appt = await Appointment.findById(req.params.id).populate("doctorId");
+        if (!appt) return res.status(404).json({ message: "Appointment not found" });
+        res.json(appt);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching appointment details" });
+    }
+});
+
+router.put("/edit-appointment/:id", async (req, res) => {
+    try {
+        const { date, time, message, doctorId } = req.body;
+        const updatedAppt = await Appointment.findByIdAndUpdate(
+            req.params.id,
+            { date, time, message, doctorId, status: "pending" }, 
+            { new: true }
+        );
+        res.json({ message: "Appointment updated successfully", updatedAppt });
+    } catch (error) {
+        res.status(500).json({ message: "Update failed" });
+    }
+});
     router.get("/my-medical-history", isAuthenticated, isPatient, async (req, res) => {
         try {
             const records = await Appointment.find({ patientId: req.user.id })
