@@ -5,7 +5,7 @@ import {useNavigate} from "react-router-dom";
 const Emergency=()=>{
     const[phone,setPhone]=useState("");
     const [loading,setLoading]=useState(false);
-    const navigate=useNavigate();
+    const navigate=useNavigate();   
 
     const handleSOS=async (e)=>{
         e.preventDefault();
