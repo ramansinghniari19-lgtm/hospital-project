@@ -12,7 +12,7 @@ const PORT=process.env.PORT||8080;
 const server = http.createServer(app);
 const  io = new Server(server,{
     cors:{
-        origin:"http//localhost:5173",
+        origin:"http://localhost:5173",
         methods:["GET","POST"]
     }
 }); 
@@ -56,11 +56,12 @@ app.use("/api/auth", require("./routes/authroutes"));
 app.use("/api/patient", require("./routes/patientroutes"));
 app.use("/api/doctor", require("./routes/doctorroutes"));
 app.use("/api/emergency",require("./routes/emergencyroutes"));
+app.use("/api/payment",require("./routes/paymentroutes"));
 
 mongoose
 .connect(process.env.DB_URI)
 .then(() => { 
-    console.log("Connected to database:", mongoose.connection.name); // Yeh line database ka naam batayegi
+    console.log("Connected to database:", mongoose.connection.name); 
     app.listen(PORT, () => {
         console.log(`Server running on port :${PORT}`);
     });

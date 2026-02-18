@@ -10,8 +10,6 @@ import { AuthProvider } from "./context/Authcontext.jsx";
 import BookAppointment from "./pages/Appointment.jsx";
 import DoctorDashboard from "./pages/Doctor/DoctorDashboard.jsx";
 
-
-
 function App() {
   return(
     <AuthProvider>

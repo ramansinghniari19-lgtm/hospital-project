@@ -36,8 +36,8 @@ const socket = io("http://localhost:8080", {
             console.log("Joined room:", user.id);
         }
         socket.on("new_appointment", (data) => {
-            alert(`🔔 ${data.message}`); // Aap isse Toastify se replace kar sakte hain
-            fetchAppointments(); // Data refresh karein automatically
+            alert(`🔔 ${data.message}`); 
+            fetchAppointments(); 
         });
         return () => {
             socket.off("new_appointment");
@@ -74,7 +74,7 @@ const socket = io("http://localhost:8080", {
         });
         alert("Appointment Completed & Report Uploaded!");
         setShowModal(false);
-        fetchAppointments(); // List refresh karo
+        fetchAppointments(); 
     } catch (err) {
         alert(err.response?.data?.message || "Upload Failed");
     }
@@ -143,7 +143,7 @@ const socket = io("http://localhost:8080", {
                     <div className="modal-content">
                         <h3>Upload Report for {selectedAppt.patientId.name}</h3>
                         <form onSubmit={handleUpload}>
-                            <input type="text" placeholder="Test Name (e.g. Blood Test)" required 
+                            <input className="entery" type="text" placeholder="Test Name (e.g. Blood Test)" required 
                                    onChange={(e) => setTestName(e.target.value)} />
                             <input type="file" accept=".pdf,.jpg,.png" required 
                                    onChange={(e) => setFile(e.target.files[0])} />

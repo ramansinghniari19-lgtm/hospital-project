@@ -1,9 +1,16 @@
-import React from "react";
+import React,{useState} from "react";
 import { Formik, Form, Field } from "formik";
 import API from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import PasswordChecklist from "react-password-checklist";
+
+
 
 const Register = () => {
+    const [password,setPassword]=useState('');
+    const [passwordAgain,setPasswordAgain]=useState('');
+    const [isValid,setIsValid]=useState(false);
+    
     const navigate = useNavigate();
 
     return (
@@ -51,7 +58,10 @@ const Register = () => {
                         <Form>
                             <Field name="name" type="text" placeholder="Enter your name" required />
                             <Field name="email" type="email" placeholder="Enter your email" required />
-                            <Field name="password" type="password" placeholder="Enter your password" required />
+                            <Field name="password" type="password" placeholder="Enter your password" onChange={(e)=>{setFieldValue("password",e.target.value);setPassword(e.target.value);}} required />
+                            <input name="password" type="password" placeholder="Confirm the password" onChange={(e)=>setPasswordAgain(e.target.value)} required/>
+                            <PasswordChecklist rules={['minLength','specialChar','number','capital','match']}
+                            minLength={8} value={password} valueAgain={passwordAgain} onChange={(isValid)=>setIsValid(isValid)} />
                             <Field name="phone" type="text" placeholder="Enter your phone number" required />
                             <Field name="address" type="text" placeholder="Enter your address" required />
 
@@ -90,7 +100,7 @@ const Register = () => {
                                 </div>
                             )}
 
-                            <button type="submit">Register</button>
+                            <button type="submit" disabled={!isValid}>Register</button>
                         </Form>
                     )}
                 </Formik>

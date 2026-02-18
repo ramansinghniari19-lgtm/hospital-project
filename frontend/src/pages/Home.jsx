@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import logo from '../assets/download.png'
 const Home = () => {
     const navigate = useNavigate();
 
     return (
         <div className="home-container">
             <nav className="navbar">
-                <div className="logo" style={{fontSize: '24px', fontWeight: 'bold'}}>🏥 Tagore Hospital</div>
+                <div className="logo" style={{fontSize: '24px', fontWeight: 'bold',display:'flex',gap:'10px'}}> <img src={logo} style={{height:"80px",marginLeft:'1px'}} alt="Hospital logo" /> Tagore Hospital</div>
                 <div className="nav-right">
                     <button className="nav-btn" onClick={() => navigate('/login')}>Login</button>
                     <button className="nav-btn" onClick={() => navigate('/register')}>Register</button>
