@@ -21,6 +21,7 @@
     "bootstrap": "^5.3.8",
     "firebase": "^12.9.0",
     "formik": "^2.4.9",
+    "gitignore": "^0.7.0",
     "razorpay": "^2.9.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
