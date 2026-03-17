@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from "react";
-import {io}from"socket.io-client";
+import { io } from "socket.io-client";
 import axios from "axios";
 
 const socket = io("http://localhost:8080", {
     transports: ["websocket"],
     withCredentials: true
-});const DoctorDashboard = () => {
+});
+
+const DoctorDashboard = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedAppt, setSelectedAppt] = useState(null);
     const [file, setFile] = useState(null);
     const [testName, setTestName] = useState("");
-    
+    const [recommendAdmit, setRecommendAdmit] = useState(false);
+    const [admissionNote, setAdmissionNote] = useState("");
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -33,7 +36,6 @@ const socket = io("http://localhost:8080", {
         fetchAppointments();
         if (user && user.id) {
             socket.emit("join_room", user.id);
-            console.log("Joined room:", user.id);
         }
         socket.on("new_appointment", (data) => {
             alert(`🔔 ${data.message}`); 
@@ -57,28 +59,45 @@ const socket = io("http://localhost:8080", {
         }
     };
 
+    const handleDischarge = async (apptId) => {
+        if (!window.confirm("Are you sure you want to discharge this patient?")) return;
+        try {
+            await axios.post("http://localhost:8080/api/doctor/discharge-patient", 
+            { appointmentId: apptId }, 
+            { headers: { Authorization: `Bearer ${token}` } });
+            alert("Patient Discharged and Bed is now free!");
+            fetchAppointments();
+        } catch (err) {
+            alert(err.response?.data?.message || "Discharge failed");
+        }
+    };
+
     const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!file || !testName) return alert("Please provide both file and test name");
+        e.preventDefault();
+        if (!file || !testName) return alert("Please provide both file and test name");
 
-    const formData = new FormData();
-    formData.append("reportFile", file); 
-    formData.append("reportName", testName);
+        const formData = new FormData();
+        formData.append("reportFile", file); 
+        formData.append("reportName", testName);
+        formData.append("recommendAdmit", recommendAdmit);
+        formData.append("admissionNote", admissionNote);
 
-    try {
-        await axios.post(`http://localhost:8080/api/doctor/complete-appointment/${selectedAppt._id}`, formData, {
-            headers: { 
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data"
-            }
-        });
-        alert("Appointment Completed & Report Uploaded!");
-        setShowModal(false);
-        fetchAppointments(); 
-    } catch (err) {
-        alert(err.response?.data?.message || "Upload Failed");
-    }
-};
+        try {
+            await axios.post(`http://localhost:8080/api/doctor/complete-appointment/${selectedAppt._id}`, formData, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+            alert("Report Uploaded & Admission Status Updated!");
+            setShowModal(false);
+            setRecommendAdmit(false); 
+            setAdmissionNote(""); 
+            fetchAppointments(); 
+        } catch (err) {
+            alert(err.response?.data?.message || "Upload Failed");
+        }
+    };
 
     const stats = {
         total: appointments.length,
@@ -117,20 +136,34 @@ const socket = io("http://localhost:8080", {
                             <tr key={appt._id}>
                                 <td>{appt.patientId?.name || "N/A"}</td>
                                 <td>{appt.date}</td>
-                                <td><span className={`status-pill ${appt.status}`}>{appt.status}</span></td>
                                 <td>
-                                    {appt.status === "pending" ? (
-                                        <div className="action-btns">
-                                            <button className="acc-btn" onClick={() => updateStatus(appt._id, "Accepted")}>Accept</button>
-                                            <button className="rej-btn" onClick={() => updateStatus(appt._id, "Rejected")}>Reject</button>
-                                        </div>
-                                    ) : appt.status === "Accepted" ? (
-                                        <button className="upload-btn" onClick={() => { setSelectedAppt(appt); setShowModal(true); }}>
-                                            Upload Report
-                                        </button>
-                                    ) : (
-                                        <span className="done-text">Rejected</span>
-                                    )}
+                                    <span className={`status-pill ${appt.status}`}>{appt.status}</span>
+                                    {appt.admissionStatus === "Admitted" && <span style={{display: 'block', fontSize: '10px', color: 'green', fontWeight: 'bold'}}>Admitted (Bed: {appt.bedNumber})</span>}
+                                </td>
+                                <td>
+                                    <div className="action-btns" style={{display: 'flex', gap: '5px'}}>
+                                        {appt.status === "pending" ? (
+                                            <>
+                                                <button className="acc-btn" onClick={() => updateStatus(appt._id, "Accepted")}>Accept</button>
+                                                <button className="rej-btn" onClick={() => updateStatus(appt._id, "Rejected")}>Reject</button>
+                                            </>
+                                        ) : appt.status === "Accepted" ? (
+                                            <button className="upload-btn" onClick={() => { setSelectedAppt(appt); setShowModal(true); }}>
+                                                Complete Appointment
+                                            </button>
+                                        ) : (
+                                            <span className="done-text">{appt.status}</span>
+                                        )}
+
+                                        {appt.admissionStatus === "Admitted" && (
+                                            <button 
+                                                onClick={() => handleDischarge(appt._id)}
+                                                style={{background: '#ffc107', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'}}
+                                            >
+                                                Discharge
+                                            </button>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -141,14 +174,36 @@ const socket = io("http://localhost:8080", {
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h3>Upload Report for {selectedAppt.patientId.name}</h3>
+                        <h3>Upload Report & Admit Decision</h3>
+                        <p>Patient: {selectedAppt.patientId.name}</p>
                         <form onSubmit={handleUpload}>
-                            <input className="entery" type="text" placeholder="Test Name (e.g. Blood Test)" required 
+                            <input className="entery" type="text" placeholder="Report Name (e.g. ECG)" required 
                                    onChange={(e) => setTestName(e.target.value)} />
-                            <input type="file" accept=".pdf,.jpg,.png" required 
-                                   onChange={(e) => setFile(e.target.files[0])} />
+                            <input type="file" required onChange={(e) => setFile(e.target.files[0])} />
+
+                            <div style={{ margin: "20px 0", textAlign: "left", background: "#f9f9f9", padding: "10px", borderRadius: "8px" }}>
+                                <label style={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: "bold", cursor: "pointer" }}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={recommendAdmit} 
+                                        onChange={(e) => setRecommendAdmit(e.target.checked)} 
+                                    />
+                                    Recommend Admission?
+                                </label>
+                                {recommendAdmit && (
+                                    <textarea 
+                                        className="entery" 
+                                        style={{ marginTop: "10px", width: "100%", height: "70px", padding: "10px" }}
+                                        placeholder="Enter Reason for Admission"
+                                        value={admissionNote}
+                                        onChange={(e) => setAdmissionNote(e.target.value)}
+                                        required
+                                    />
+                                )}
+                            </div>
+
                             <div className="modal-btns">
-                                <button type="submit" className="submit-btn">Submit Report</button>
+                                <button type="submit" className="submit-btn">Finish & Send</button>
                                 <button type="button" className="close-btn" onClick={() => setShowModal(false)}>Cancel</button>
                             </div>
                         </form>

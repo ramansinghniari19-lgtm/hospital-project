@@ -76,6 +76,7 @@ router.get("/dashboard-data", isAuthenticated, isPatient, async (req, res) => {
     try {
         const appointments = await Appointment.find({ patientId: req.user.id })
             .populate("doctorId", "name specialization")
+            .select("+admissionStatus +admissionNote +bedNumber +reports")
             .sort({ createdAt: -1 });
 
         res.status(200).json(appointments);
@@ -109,9 +110,12 @@ router.put("/edit-appointment/:id", async (req, res) => {
     router.get("/my-medical-history", isAuthenticated, isPatient, async (req, res) => {
         try {
             const records = await Appointment.find({ patientId: req.user.id })
-                .populate("doctorId", "name specialization");
+                .populate("doctorId", "name specialization")
+                .select("+admissionStatus +admissionNote +bedNumber +reports")
+                .sort({date: -1});
             res.status(200).json(records);
         } catch (error) {
+            console.error("Medical history fetch error")
             res.status(500).json({ message: "Fetch error" });
         }
     });

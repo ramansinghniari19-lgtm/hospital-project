@@ -7,7 +7,7 @@ const appointmentSchema = new mongoose.Schema({
         required: true
     },
     doctorId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.    ObjectId,
         ref: "User", 
         required: true
     },
@@ -26,6 +26,23 @@ const appointmentSchema = new mongoose.Schema({
     message: {
         type: String, 
         default: ""
+    },
+    admissionStatus:{
+        type:String,
+        enum:["None","Recommended","Admitted","Discharged"],
+        default:"None"
+    },
+    bedNumber:{
+        type:String,
+        default:null 
+    },
+    admissionNote:{
+        type:String,
+        default:""
+    },
+    dischargeSummary:{
+        type:String,
+        default:""
     },
     created_at: {
         type: Date,
