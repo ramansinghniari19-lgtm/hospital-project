@@ -48,7 +48,6 @@ app.use(
 );
 app.use("/uploads/reports", express.static(path.join(__dirname, "uploads/reports")));
 app.use("/uploads/profilePics", express.static(path.join(__dirname, "uploads/Profile_Pics")));
-
 app.get('/',(req,res)=>{
     res.send('Server is  running on 8080');
 });

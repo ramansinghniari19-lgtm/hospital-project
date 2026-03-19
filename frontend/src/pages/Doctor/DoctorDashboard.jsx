@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // 1. Navigate import kiya
 
 const socket = io("http://localhost:8080", {
     transports: ["websocket"],
@@ -8,6 +9,7 @@ const socket = io("http://localhost:8080", {
 });
 
 const DoctorDashboard = () => {
+    const navigate = useNavigate(); // 2. Navigate define kiya
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -110,8 +112,66 @@ const DoctorDashboard = () => {
     return (
         <div className="doc-dash-wrapper">
             <header className="doc-nav">
-                <h2>Doctor Dashboard</h2>
-                <button className="logout-btn" onClick={() => { localStorage.clear(); window.location.href="/login"; }}>Logout</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <img 
+                        src={user?.image ? `http://localhost:8080/uploads/profilePics/${encodeURIComponent(user.image)}` : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"} 
+                        alt="Profile" 
+                        style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover', border: '2px solid white' }}
+                        onError={(e) => { e.target.src = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" }}
+                    />
+                    <h2>Doctor Dashboard</h2>
+                </div>
+
+                {/* Logout Button */}
+                <button 
+                    className="logout-btn" 
+                    onClick={() => { localStorage.clear(); navigate("/login"); }}
+                    style={{ 
+                        background: '#ff4d4d', 
+                        color: 'white', 
+                        border: 'none', 
+                        padding: '8px 15px', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Logout
+                </button>
+
+                {/* --- FIXED GO TO WEBSITE BUTTON --- */}
+                <button 
+                    onClick={() => navigate("/")} 
+                    style={{ 
+                        position: 'fixed', 
+                        top: '50px', 
+                        right: '120px', 
+                        background: 'white', 
+                        color: '#333', 
+                        border: 'none', 
+                        padding: '10px 15px', 
+                        borderRadius: '30px', 
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        boxShadow: '0px 4px 10px rgba(0,0,0,0.1)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: '0.3s'
+                    }}
+                    onMouseOver={(e) => {
+                        e.target.style.transform = 'scale(1.05)';
+                        e.target.style.backgroundColor = '#f8f9fa';
+                    }}
+                    onMouseOut={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.backgroundColor = 'white';
+                    }}
+                >
+                    🏠 Go to Website
+                </button>
             </header>
 
             <div className="stats-container">
@@ -175,7 +235,7 @@ const DoctorDashboard = () => {
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <h3>Upload Report & Admit Decision</h3>
-                        <p>Patient: {selectedAppt.patientId.name}</p>
+                        <p>Patient: {selectedAppt?.patientId?.name}</p>
                         <form onSubmit={handleUpload}>
                             <input className="entery" type="text" placeholder="Report Name (e.g. ECG)" required 
                                    onChange={(e) => setTestName(e.target.value)} />

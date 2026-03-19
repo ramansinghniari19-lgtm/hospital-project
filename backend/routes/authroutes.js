@@ -66,10 +66,28 @@ router.post("/login", async (req, res) => {
         res.status(200).json({
             success: true,
             token,
-            user: { id: user._id, name: user.name, role: user.role }
+            user: { id: user._id, name: user.name, role: user.role,image:user.image }
         });
     } catch (error) {
         res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+
+router.post("/forgot-password",async(req,res)=>{
+    try{
+        const {email,newPassword}=req.body;
+        const user = await User.findOne({email});
+        if(!user){
+            return res.status(404).json({success: false,message:"User not found with this email"});
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword,salt);
+        user.password = hashedPassword;
+        await user.save();
+        res.status(200).json({success:true,message:"password updated successfully!please login."});
+    }catch(error){
+        res.status(500).json({success:false,message:"server Error"});
     }
 });
 

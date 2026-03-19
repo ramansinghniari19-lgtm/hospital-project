@@ -29,7 +29,41 @@ const Login = () => {
     };
 
     return (
-        <div className="auth-container">
+        <div className="auth-container" style={{ position: 'relative', minHeight: '100vh' }}>
+            
+            <button 
+                onClick={() => navigate("/")} 
+                style={{ 
+                    position: 'fixed', 
+                    top: '20px', 
+                    right: '30px', 
+                    background: 'white', 
+                    color: '#333', 
+                    border: 'none', 
+                    padding: '10px 20px', 
+                    borderRadius: '30px', 
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    boxShadow: '0px 4px 10px rgba(0,0,0,0.1)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                    e.target.style.transform = 'scale(1.05)';
+                    e.target.style.backgroundColor = '#f8f9fa';
+                }}
+                onMouseOut={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.backgroundColor = 'white';
+                }}
+            >
+                🏠 Go to Website
+            </button>
+
             <div className="auth-card">
                 <h2>Hospital</h2>
                 <p>Welcome back! Please Login</p>
@@ -46,9 +80,22 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)} 
                         required 
                     />
+                    
+                    <div style={{ textAlign: 'right', marginTop: '-10px', marginBottom: '15px' }}>
+                        <span 
+                            onClick={() => navigate("/forgot-password")} 
+                            style={{ cursor: 'pointer', color: '#007bff', fontSize: '13px', fontWeight: '500' }}
+                        >
+                            Forgot Password?
+                        </span>
+                    </div>
+
                     <button type="submit">Login</button>
                 </form>
-                <p>Don't have an Account? <span onClick={() => navigate("/register")} style={{cursor: 'pointer', color: 'blue'}}>Register</span></p>
+
+                <div className="auth-footer" style={{ marginTop: '20px' }}>
+                    <p>Don't have an Account? <span onClick={() => navigate("/register")} style={{cursor: 'pointer', color: 'blue', fontWeight: 'bold'}}>Register</span></p>
+                </div>
             </div>
         </div>
     );

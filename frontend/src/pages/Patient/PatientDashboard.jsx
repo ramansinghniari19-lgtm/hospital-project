@@ -67,14 +67,68 @@ const PatientDashboard = () => {
     return (
         <div className="dashboard-wrapper">
             <div className="dash-nav">
-                <div className="user-welcome">
-                    <h2>Welcome, <span>{user?.name || "Patient"}</span></h2>
-                    <p>Manage your health and appointments</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                 <img 
+    // Rasta: Base URL + Backend wala Route + encoded Image Name
+    src={user?.image 
+        ? `http://localhost:8080/uploads/profilePics/${encodeURIComponent(user.image)}` 
+        : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"} 
+    alt="Profile" 
+    style={{ 
+        width: '60px', 
+        height: '60px', 
+        borderRadius: '50%', 
+        objectFit: 'cover', 
+        border: '3px solid #007bff' 
+    }} 
+    onError={(e) => { 
+        e.target.src = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"; 
+    }}
+/>
+                    <div className="user-welcome">
+                        <h2 style={{ margin: 0 }}>Welcome, <span>{user?.name || "Patient"}</span></h2>
+                        <p style={{ margin: 0 }}>Manage your health and appointments</p>
+                    </div>
                 </div>
+
                 <div className="dash-btns">
                     <button className="book-btn" onClick={() => navigate("/book-appointment")}>+ Book New</button>
                     <button className="logout-btn" onClick={() => { localStorage.clear(); navigate("/login"); }}>Logout</button>
+                    <button 
+                onClick={() => navigate("/")} 
+                style={{ 
+                    position: 'fixed', 
+                    top: '70px', 
+                    right: '45px', 
+                    background: 'white', 
+                    color: '#333', 
+                    border: 'none', 
+                    padding: '10px 10px', 
+                    borderRadius: '30px', 
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    boxShadow: '0px 4px 10px rgba(0,0,0,0.1)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                    e.target.style.transform = 'scale(1.05)';
+                    e.target.style.backgroundColor = '#f8f9fa';
+                }}
+                onMouseOut={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.backgroundColor = 'white';
+                }}
+            >
+                🏠 Go to Website
+            </button>
+                    
                 </div>
+                
             </div>
 
             <div className="dash-content">

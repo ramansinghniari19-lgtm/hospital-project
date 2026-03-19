@@ -9,12 +9,14 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/Authcontext.jsx";
 import BookAppointment from "./pages/Appointment.jsx";
 import DoctorDashboard from "./pages/Doctor/DoctorDashboard.jsx";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
 
 function App() {
   return(
     <AuthProvider>
     <Router>
       <Routes>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/" element={<Navigate to ="/Home"/>}/>
         <Route path="/login" element={<Login/>}/>
         <Route path="/Register" element={<Register/>}/>
